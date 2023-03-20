@@ -24,7 +24,6 @@ class ViewController: UIViewController, UINavigationControllerDelegate {
         
     }
 
-
     @IBAction func cameraTapped(_ sender: UIBarButtonItem) {
         
         present(imagePicker, animated: true, completion: nil)
@@ -40,16 +39,33 @@ extension ViewController: UIImagePickerControllerDelegate {
                 fatalError("Cannot convert to CIImage")
             }
             
+            detect(image: ciImage)
+            
             imageView.image = pickedImage
             
         }
         
-        
-        
         imagePicker.dismiss(animated: true, completion: nil)
     }
     
-    func detect(inage: CIImage) {
+    func detect(image: CIImage) {
+        
+        guard let model = try? VNCoreMLModel(for: FlowerClassifier(configuration: MLModelConfiguration()).model) else {
+            fatalError("Cannot impotr ML model")
+        }
+        
+        let request = VNCoreMLRequest(model: model) {(request, error) in
+            let classification = request.results?.first as? VNClassificationObservation
+            
+            self.navigationItem.title = classification?.identifier.capitalized
+        }
+        
+        let handler = VNImageRequestHandler(ciImage: image)
+        do{
+            try handler.perform([request])
+        } catch {
+            print(error)
+        }
         
     }
 }
